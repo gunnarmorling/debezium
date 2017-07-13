@@ -55,13 +55,18 @@ import io.debezium.util.Strings;
 public class PostgresConnectorIT extends AbstractConnectorTest {
 
     private static final String INSERT_STMT = "INSERT INTO s1.a (aa) VALUES (1);" +
-                                              "INSERT INTO s2.a (aa) VALUES (1);";
+                                              "INSERT INTO s2.a (aa) VALUES (1);" +
+                                              "INSERT INTO s3.a (d, n) VALUES (12.3400, 56.7800);"
+    		;
     private static final String SETUP_TABLES_STMT = "DROP SCHEMA IF EXISTS s1 CASCADE;" +
                                                     "DROP SCHEMA IF EXISTS s2 CASCADE;" +
+                                                    "DROP SCHEMA IF EXISTS s3 CASCADE;" +
                                                     "CREATE SCHEMA s1; " +
                                                     "CREATE SCHEMA s2; " +
+                                                    "CREATE SCHEMA s3; " +
                                                     "CREATE TABLE s1.a (pk SERIAL, aa integer, PRIMARY KEY(pk));" +
                                                     "CREATE TABLE s2.a (pk SERIAL, aa integer, PRIMARY KEY(pk));" +
+                                                    "CREATE TABLE s3.a (pk SERIAL, d DECIMAL(6,4), n NUMERIC(6,4), PRIMARY KEY(pk));" +
                                                     INSERT_STMT;
     private PostgresConnector connector;
 

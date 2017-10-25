@@ -837,7 +837,7 @@ public class MySqlConnectorConfig extends CommonConnectorConfig {
                                                                 DatabaseHistory.DDL_FILTER);
 
     public MySqlConnectorConfig(Configuration config) {
-        super(config);
+        super(config, SERVER_NAME);
     }
 
     protected static ConfigDef configDef() {

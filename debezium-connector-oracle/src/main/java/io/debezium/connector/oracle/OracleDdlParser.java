@@ -116,6 +116,12 @@ public class OracleDdlParser implements DdlParser {
                 columnEditor.length(38);
                 columnEditor.scale(0);
             }
+//            else if (ctx.datatype().native_datatype_element().NUMBER() != null) {
+//                columnEditor.jdbcType(Types.NUMERIC);
+//                columnEditor.type("NUMBER");
+////                columnEditor.length(38);
+////                columnEditor.scale(0);
+//            }
             else if (ctx.datatype().native_datatype_element().DATE() != null) {
                 columnEditor.jdbcType(Types.DATE);
                 columnEditor.type("DATE");

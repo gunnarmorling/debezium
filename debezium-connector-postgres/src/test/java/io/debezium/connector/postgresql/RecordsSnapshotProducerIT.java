@@ -35,6 +35,7 @@ import io.debezium.connector.postgresql.junit.SkipTestDependingOnDatabaseVersion
 import io.debezium.connector.postgresql.junit.SkipWhenDatabaseVersionLessThan;
 import io.debezium.connector.postgresql.snapshot.AlwaysSnapshotter;
 import io.debezium.connector.postgresql.snapshot.InitialOnlySnapshotter;
+import io.debezium.connector.postgresql.snapshot.SnapshotterWrapper;
 import io.debezium.connector.postgresql.spi.Snapshotter;
 import io.debezium.data.Envelope;
 import io.debezium.data.VerifyRecord;
@@ -264,14 +265,14 @@ public class RecordsSnapshotProducerIT extends AbstractRecordsProducerTest {
 
     private RecordsSnapshotProducer buildNoStreamProducer(PostgresTaskContext ctx, PostgresConnectorConfig config) {
         Snapshotter sn = new InitialOnlySnapshotter();
-        sn.init(config, null, null);
-        return new RecordsSnapshotProducer(ctx, new SourceInfo(TestHelper.TEST_SERVER, TestHelper.TEST_DATABASE), sn);
+        SnapshotterWrapper snw = new SnapshotterWrapper(sn, config, null, null);
+        return new RecordsSnapshotProducer(ctx, new SourceInfo(TestHelper.TEST_SERVER, TestHelper.TEST_DATABASE), snw);
     }
 
     private RecordsSnapshotProducer buildWithStreamProducer(PostgresTaskContext ctx, PostgresConnectorConfig config) {
         Snapshotter sn = new AlwaysSnapshotter();
-        sn.init(config, null, null);
-        return new RecordsSnapshotProducer(ctx, new SourceInfo(TestHelper.TEST_SERVER, TestHelper.TEST_DATABASE), sn);
+        SnapshotterWrapper snw = new SnapshotterWrapper(sn, config, null, null);
+        return new RecordsSnapshotProducer(ctx, new SourceInfo(TestHelper.TEST_SERVER, TestHelper.TEST_DATABASE), snw);
     }
 
     private void assertReadRecord(SourceRecord record, Map<String, List<SchemaAndValueField>> expectedValuesByTopicName) {

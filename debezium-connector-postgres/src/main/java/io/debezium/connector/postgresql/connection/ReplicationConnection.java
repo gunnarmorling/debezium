@@ -8,7 +8,9 @@ package io.debezium.connector.postgresql.connection;
 
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.Optional;
 
+import io.debezium.connector.postgresql.spi.SlotCreated;
 import org.postgresql.replication.LogSequenceNumber;
 import org.postgresql.replication.PGReplicationStream;
 
@@ -56,6 +58,27 @@ public interface ReplicationConnection extends AutoCloseable {
     ReplicationStream startStreaming(Long offset) throws SQLException, InterruptedException;
 
     /**
+     * Creates a new replication slot with the given option and returns the result of the command, which
+     * may contain results (depending on postgres versions)
+     *
+     * @throws SQLException if anything fails
+     */
+    void createReplicationSlot() throws SQLException;
+
+    /**
+     *  Forces the connection to be created, is called by startStreaming, but can be called manually
+     *  in cases where we want the connection but not to to start streaming yet.
+     *
+     *  Can be called multiple times
+     */
+    void initConnection() throws SQLException, InterruptedException;
+
+    /**
+     * Returns the results of creating the slot, which may contain a snapshot id
+     */
+    Optional<SlotCreated> getSlotCreationResult();
+
+    /**
      * Checks whether this connection is open or not
      *
      * @return {@code true} if this connection is open, {@code false} otherwise
@@ -92,6 +115,7 @@ public interface ReplicationConnection extends AutoCloseable {
          */
         String DEFAULT_SLOT_NAME = "debezium";
         boolean DEFAULT_DROP_SLOT_ON_CLOSE = true;
+        boolean DEFAULT_EXPORT_SNAPSHOT = false;
 
         /**
          * Sets the name for the PG logical replication slot
@@ -139,6 +163,14 @@ public interface ReplicationConnection extends AutoCloseable {
          * @see #STREAM_PARAMS
          */
         Builder streamParams(final String streamParams);
+
+        /**
+         * Whether or not to export the snapshot when creating the slot
+         * @param exportSnapshot true if a snapshot should be export, false if otherwise
+         * @return this instance
+         * @see #DEFAULT_DROP_SLOT_ON_CLOSE
+         */
+        Builder exportSnapshotOnCreate(final boolean exportSnapshot);
 
         /**
          * Creates a new {@link ReplicationConnection} instance

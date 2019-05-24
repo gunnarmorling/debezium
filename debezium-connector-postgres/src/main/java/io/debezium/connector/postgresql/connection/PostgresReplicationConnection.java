@@ -102,28 +102,25 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
         // to keep the same
         try {
             ensureSlotNotActive(getSlotInfo());
-        } catch (Throwable exp) {
+        }
+        catch (Throwable t) {
             close();
-            throw new ConnectException("failed to find slot info");
+            throw new ConnectException(t);
         }
     }
 
     private ServerInfo.ReplicationSlot getSlotInfo() throws SQLException, InterruptedException {
-        final String postgresPluginName = plugin.getPostgresPluginName();
-        ServerInfo.ReplicationSlot slotInfo;
         try (PostgresConnection connection = new PostgresConnection(originalConfig)) {
-            slotInfo = connection.readReplicationSlotInfo(slotName, postgresPluginName);
+            return connection.readReplicationSlotInfo(slotName, plugin.getPostgresPluginName());
         }
-        return slotInfo;
     }
 
     private void ensureSlotNotActive(ServerInfo.ReplicationSlot slotInfo) throws IllegalStateException {
         if (slotInfo.active()) {
-            LOGGER.error(
-                    "A logical replication slot named '{}' for plugin '{}' and database '{}' is already active on the server." +
-                    "You cannot have multiple slots with the same name active for the same database",
-                    slotName, plugin.getPostgresPluginName(), database());
-            throw new IllegalStateException();
+            throw new IllegalStateException(
+                    "A logical replication slot named '" + slotName + "' for plugin '" + plugin.getPostgresPluginName() + "' and database '" + database() + "' is already active on the server." +
+                    "You cannot have multiple slots with the same name active for the same database."
+            );
         }
     }
 

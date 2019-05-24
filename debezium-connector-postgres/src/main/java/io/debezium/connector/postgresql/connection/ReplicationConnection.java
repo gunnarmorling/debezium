@@ -167,7 +167,7 @@ public interface ReplicationConnection extends AutoCloseable {
 
         /**
          * Whether or not to export the snapshot when creating the slot
-         * @param exportSnapshot true if a snapshot should be export, false if otherwise
+         * @param exportSnapshot true if a snapshot should be exported, false if otherwise
          * @return this instance
          * @see #DEFAULT_EXPORT_SNAPSHOT
          */

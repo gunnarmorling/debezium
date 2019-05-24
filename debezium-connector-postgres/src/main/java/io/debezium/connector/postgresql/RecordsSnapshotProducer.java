@@ -33,8 +33,8 @@ import io.debezium.config.ConfigurationDefaults;
 import io.debezium.connector.postgresql.connection.PostgresConnection;
 import io.debezium.connector.postgresql.connection.ReplicationConnection;
 import io.debezium.connector.postgresql.snapshot.SnapshotterWrapper;
+import io.debezium.connector.postgresql.spi.SlotCreationResult;
 import io.debezium.connector.postgresql.spi.Snapshotter;
-import io.debezium.connector.postgresql.spi.SlotCreated;
 import io.debezium.data.Envelope;
 import io.debezium.data.SpecialValueDecimal;
 import io.debezium.function.BlockingConsumer;
@@ -64,7 +64,7 @@ public class RecordsSnapshotProducer extends RecordsProducer {
 
     private final AtomicReference<SourceRecord> currentRecord;
     private final Snapshotter snapshotter;
-    private final Optional<SlotCreated> slotCreatedInfo;
+    private final SlotCreationResult slotCreatedInfo;
 
     public RecordsSnapshotProducer(PostgresTaskContext taskContext,
                                    SourceInfo sourceInfo,
@@ -82,18 +82,20 @@ public class RecordsSnapshotProducer extends RecordsProducer {
                 // otherwise we can't stream back changes happening while the snapshot is taking place
                 if (!snapWrapper.doesSlotExist()) {
                     replConn.createReplicationSlot();
-                    slotCreatedInfo = replConn.getSlotCreationResult();
-                } else {
-                    slotCreatedInfo = Optional.empty();
+                    slotCreatedInfo = replConn.getSlotCreationResult().orElse(null);
+                }
+                else {
+                    slotCreatedInfo = null;
                 }
             }
             catch (SQLException ex) {
                 throw new ConnectException(ex);
             }
             streamProducer = Optional.of(new RecordsStreamProducer(taskContext, sourceInfo, replConn));
-        } else {
+        }
+        else {
             streamProducer = Optional.empty();
-            slotCreatedInfo = Optional.empty();
+            slotCreatedInfo = null;
         }
     }
 
@@ -198,7 +200,7 @@ public class RecordsSnapshotProducer extends RecordsProducer {
             logger.info("Step 1: starting transaction and refreshing the DB schemas for database '{}' and user '{}'",
                         connection.database(), connection.username());
 
-            String transactionStatement = snapshotter.createSnapshotTransaction(slotCreatedInfo);
+            String transactionStatement = snapshotter.snapshotTransactionIsolationLevelStatement(slotCreatedInfo);
             logger.info("openining transaction with statement {}", transactionStatement);
             connection.executeWithoutCommitting(transactionStatement);
 
@@ -206,7 +208,7 @@ public class RecordsSnapshotProducer extends RecordsProducer {
             PostgresSchema schema = schema();
             schema.refresh(connection, false);
 
-            Optional<String> lockStatement = snapshotter.lockTablesForSnapshot(lockTimeout, schema.tableIds());
+            Optional<String> lockStatement = snapshotter.snapshotTableLockingStatement(lockTimeout, schema.tableIds());
             if (lockStatement.isPresent()) {
                 logger.info("Step 2: locking each of the database tables, waiting a maximum of '{}' seconds for each lock",
                         lockTimeout.getSeconds());

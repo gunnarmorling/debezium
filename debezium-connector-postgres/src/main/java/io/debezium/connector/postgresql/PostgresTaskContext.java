@@ -9,6 +9,9 @@ package io.debezium.connector.postgresql;
 import java.sql.SQLException;
 import java.util.Collections;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.debezium.annotation.ThreadSafe;
 import io.debezium.connector.common.CdcSourceTaskContext;
 import io.debezium.connector.postgresql.connection.PostgresConnection;
@@ -18,8 +21,6 @@ import io.debezium.relational.TableId;
 import io.debezium.schema.TopicSelector;
 import io.debezium.util.Clock;
 import io.debezium.util.ElapsedTimeStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The context of a {@link PostgresConnectorTask}. This deals with most of the brunt of reading various configuration options
@@ -100,7 +101,7 @@ public class PostgresTaskContext extends CdcSourceTaskContext {
         return slotInfo;
     }
 
-    protected ReplicationConnection createReplicationConnection(Boolean exportSnapshot) throws SQLException {
+    protected ReplicationConnection createReplicationConnection(boolean exportSnapshot) throws SQLException {
         return ReplicationConnection.builder(config.jdbcConfig())
                                     .withSlot(config.slotName())
                                     .withPlugin(config.plugin())

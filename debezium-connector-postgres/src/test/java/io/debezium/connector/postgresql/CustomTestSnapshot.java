@@ -5,13 +5,13 @@
  */
 package io.debezium.connector.postgresql;
 
-import io.debezium.connector.postgresql.spi.SlotCreated;
-import io.debezium.connector.postgresql.spi.Snapshotter;
-import io.debezium.connector.postgresql.spi.OffsetState;
-import io.debezium.connector.postgresql.spi.SlotState;
-import io.debezium.relational.TableId;
-
 import java.util.Optional;
+
+import io.debezium.connector.postgresql.spi.OffsetState;
+import io.debezium.connector.postgresql.spi.SlotCreationResult;
+import io.debezium.connector.postgresql.spi.SlotState;
+import io.debezium.connector.postgresql.spi.Snapshotter;
+import io.debezium.relational.TableId;
 
 /**
  * This is a small class used in PostgresConnectorIT to test a custom snapshot
@@ -53,14 +53,12 @@ public class CustomTestSnapshot implements Snapshotter {
     }
 
     @Override
-    public String createSnapshotTransaction(Optional<SlotCreated> newSlotInfo) {
+    public String snapshotTransactionIsolationLevelStatement(SlotCreationResult newSlotInfo) {
         // this actually is never used in the tests as we don't have any tests
         // that run against pg10+, leaving it here anyways in hopes that
         // someday there is a build against pg10
-        if (newSlotInfo.isPresent()) {
-            SlotCreated slotInfo = newSlotInfo.get();
-
-            String snapSet = String.format("SET TRANSACTION SNAPSHOT '%s';", slotInfo.snapshotName());
+        if (newSlotInfo != null) {
+            String snapSet = String.format("SET TRANSACTION SNAPSHOT '%s';", newSlotInfo.snapshotName());
             return "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; \n" + snapSet;
         }
         else {

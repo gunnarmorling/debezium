@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
-import io.debezium.connector.postgresql.spi.SlotCreated;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.postgresql.jdbc.PgConnection;
 import org.postgresql.replication.LogSequenceNumber;
@@ -35,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import io.debezium.config.Configuration;
 import io.debezium.connector.postgresql.PostgresConnectorConfig;
 import io.debezium.connector.postgresql.TypeRegistry;
+import io.debezium.connector.postgresql.spi.SlotCreationResult;
 import io.debezium.jdbc.JdbcConnection;
 import io.debezium.jdbc.JdbcConnectionException;
 import io.debezium.util.Clock;
@@ -61,7 +61,7 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
     private final Properties streamParams;
 
     private long defaultStartingPos;
-    private Optional<SlotCreated> slotCreationInfo;
+    private SlotCreationResult slotCreationInfo;
     private boolean hasInitedSlot;
 
     /**
@@ -96,7 +96,7 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
         this.messageDecoder = plugin.messageDecoder();
         this.typeRegistry = typeRegistry;
         this.streamParams = streamParams;
-        this.slotCreationInfo = Optional.empty();
+        this.slotCreationInfo = null;
         this.hasInitedSlot = false;
 
         // to keep the same
@@ -155,8 +155,8 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
                 }
             });
 
-            if (slotCreationInfo.isPresent()) {
-                this.defaultStartingPos = slotCreationInfo.get().startLsn();
+            if (slotCreationInfo != null) {
+                this.defaultStartingPos = slotCreationInfo.startLsn();
             }
             else if (shouldCreateSlot || !slotInfo.hasValidFlushedLsn()) {
                 // this is a new slot or we weren't able to read a valid flush LSN pos, so we always start from the xlog pos that was reported
@@ -251,15 +251,15 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
     }
 
     @Override
-    public Optional<SlotCreated> getSlotCreationResult() {
-        return slotCreationInfo;
+    public Optional<SlotCreationResult> getSlotCreationResult() {
+        return Optional.ofNullable(slotCreationInfo);
     }
 
     protected PgConnection pgConnection() throws SQLException {
         return (PgConnection) connection(false);
     }
 
-    private Optional<SlotCreated> parseSlotCreation(ResultSet rs) {
+    private SlotCreationResult parseSlotCreation(ResultSet rs) {
         try {
             if (rs.next()) {
                 String slotName = rs.getString("slot_name");
@@ -267,7 +267,7 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
                 String snapName = rs.getString("snapshot_name");
                 String pluginName = rs.getString("output_plugin");
 
-                return Optional.of(new SlotCreated(slotName, startPoint, snapName, pluginName));
+                return new SlotCreationResult(slotName, startPoint, snapName, pluginName);
             }
             else {
                 throw new ConnectException("expected response to create_replication_slot");

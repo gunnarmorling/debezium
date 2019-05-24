@@ -5,20 +5,22 @@
  */
 package io.debezium.connector.postgresql.spi;
 
-import io.debezium.annotation.Incubating;
 import org.postgresql.replication.LogSequenceNumber;
 
+import io.debezium.annotation.Incubating;
+
 /**
- * A simple data container for the result of @{link: }
+ * A simple data container representing the creation of a newly created replication slot.
  */
 @Incubating
-public class SlotCreated {
+public class SlotCreationResult {
+
     private final String slotName;
     private final Long walStartLsn;
     private final String snapshotName;
     private final String pluginName;
 
-    public SlotCreated(String name, String startLsn, String snapshotName, String pluginName) {
+    public SlotCreationResult(String name, String startLsn, String snapshotName, String pluginName) {
         this.slotName = name;
         this.walStartLsn = LogSequenceNumber.valueOf(startLsn).asLong();
         this.snapshotName = snapshotName;
@@ -27,8 +29,7 @@ public class SlotCreated {
 
 
     /**
-     * return's the
-     * @return
+     * return the name of the created slot.
      */
     public String slotName() {
         return slotName;

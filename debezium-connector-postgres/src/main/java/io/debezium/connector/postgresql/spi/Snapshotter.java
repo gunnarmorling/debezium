@@ -5,13 +5,13 @@
  */
 package io.debezium.connector.postgresql.spi;
 
-import io.debezium.annotation.Incubating;
-import io.debezium.connector.postgresql.PostgresConnectorConfig;
-import io.debezium.relational.TableId;
-
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
+
+import io.debezium.annotation.Incubating;
+import io.debezium.connector.postgresql.PostgresConnectorConfig;
+import io.debezium.relational.TableId;
 
 /**
  * This interface is used to determine details about the snapshot process:
@@ -65,12 +65,16 @@ public interface Snapshotter {
      * @param newSlotInfo if a new slow was created for snapshotting, this contains information from
      *                    the `create_replication_slot` command
      */
-    default String createSnapshotTransaction(Optional<SlotCreated> newSlotInfo) {
+    default String snapshotTransactionIsolationLevelStatement(SlotCreationResult newSlotInfo) {
         // we're using the same isolation level that pg_backup uses
         return "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE, READ ONLY, DEFERRABLE;";
     }
 
-    default Optional<String> lockTablesForSnapshot(Duration lockTimeout, Set<TableId> tableIds) {
+    /**
+     * Returns a SQL statement for locking the given tables during snapshotting, if required by the specific snapshotter
+     * implementation.
+     */
+    default Optional<String> snapshotTableLockingStatement(Duration lockTimeout, Set<TableId> tableIds) {
         String lineSeparator = System.lineSeparator();
         StringBuilder statements = new StringBuilder();
         statements.append("SET lock_timeout = ").append(lockTimeout.toMillis()).append(";").append(lineSeparator);

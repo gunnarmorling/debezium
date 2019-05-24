@@ -10,7 +10,6 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Optional;
 
-import io.debezium.connector.postgresql.spi.SlotCreated;
 import org.postgresql.replication.LogSequenceNumber;
 import org.postgresql.replication.PGReplicationStream;
 
@@ -18,6 +17,7 @@ import io.debezium.annotation.NotThreadSafe;
 import io.debezium.config.Configuration;
 import io.debezium.connector.postgresql.PostgresConnectorConfig;
 import io.debezium.connector.postgresql.TypeRegistry;
+import io.debezium.connector.postgresql.spi.SlotCreationResult;
 
 /**
  * A Postgres logical streaming replication connection. Replication connections are established for a slot and a given plugin
@@ -76,7 +76,7 @@ public interface ReplicationConnection extends AutoCloseable {
     /**
      * Returns the results of creating the slot, which may contain a snapshot id
      */
-    Optional<SlotCreated> getSlotCreationResult();
+    Optional<SlotCreationResult> getSlotCreationResult();
 
     /**
      * Checks whether this connection is open or not
@@ -110,6 +110,7 @@ public interface ReplicationConnection extends AutoCloseable {
      * A builder for {@link ReplicationConnection}
      */
     interface Builder {
+
         /**
          * Default replication settings
          */
@@ -168,7 +169,7 @@ public interface ReplicationConnection extends AutoCloseable {
          * Whether or not to export the snapshot when creating the slot
          * @param exportSnapshot true if a snapshot should be export, false if otherwise
          * @return this instance
-         * @see #DEFAULT_DROP_SLOT_ON_CLOSE
+         * @see #DEFAULT_EXPORT_SNAPSHOT
          */
         Builder exportSnapshotOnCreate(final boolean exportSnapshot);
 

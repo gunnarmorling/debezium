@@ -202,12 +202,12 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
         return (PgConnection) connection(false);
     }
 
-    private ReplicationStream createReplicationStream(final LogSequenceNumber lsn) throws SQLException, InterruptedException {
+    private ReplicationStream createReplicationStream(final LogSequenceNumber startLsn) throws SQLException, InterruptedException {
         PGReplicationStream s;
 
         try {
             try {
-                s = startPgReplicationStream(lsn,
+                s = startPgReplicationStream(startLsn,
                         plugin.forceRds()
                                 ? x -> messageDecoder.optionsWithoutMetadata(messageDecoder.tryOnceOptions(x))
                                 : x -> messageDecoder.optionsWithMetadata(messageDecoder.tryOnceOptions(x)));
@@ -220,7 +220,7 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
                     initReplicationSlot();
                 }
 
-                s = startPgReplicationStream(lsn, plugin.forceRds() ? messageDecoder::optionsWithoutMetadata : messageDecoder::optionsWithMetadata);
+                s = startPgReplicationStream(startLsn, plugin.forceRds() ? messageDecoder::optionsWithoutMetadata : messageDecoder::optionsWithMetadata);
                 messageDecoder.setContainsMetadata(plugin.forceRds() ? false : true);
             }
         }
@@ -233,7 +233,7 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
                     initReplicationSlot();
                 }
 
-                s = startPgReplicationStream(lsn, messageDecoder::optionsWithoutMetadata);
+                s = startPgReplicationStream(startLsn, messageDecoder::optionsWithoutMetadata);
                 messageDecoder.setContainsMetadata(false);
             }
             else if (e.getMessage().matches("(?s)ERROR: requested WAL segment .* has already been removed.*")) {
@@ -246,7 +246,7 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
         }
 
         final PGReplicationStream stream = s;
-        final long lsnLong = lsn.asLong();
+        final long startLsnLong = startLsn.asLong();
 
         return new ReplicationStream() {
 
@@ -263,7 +263,8 @@ public class PostgresReplicationConnection extends JdbcConnection implements Rep
             public void read(ReplicationMessageProcessor processor) throws SQLException, InterruptedException {
                 ByteBuffer read = stream.read();
                 // the lsn we started from is inclusive, so we need to avoid sending back the same message twice
-                if (lsnLong >= stream.getLastReceiveLSN().asLong()) {
+                // DBZ-766 LSN is 0 for "R" events from pgoutput
+                if (stream.getLastReceiveLSN().asLong() > 0 && startLsnLong >= stream.getLastReceiveLSN().asLong()) {
                     return;
                 }
                 deserializeMessages(read, processor);

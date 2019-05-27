@@ -24,6 +24,7 @@ import io.debezium.connector.AbstractSourceInfo;
 import io.debezium.connector.SourceInfoStructMaker;
 import io.debezium.connector.postgresql.connection.MessageDecoder;
 import io.debezium.connector.postgresql.connection.ReplicationConnection;
+import io.debezium.connector.postgresql.connection.pgoutput.PgOutputMessageDecoder;
 import io.debezium.connector.postgresql.connection.pgproto.PgProtoMessageDecoder;
 import io.debezium.connector.postgresql.connection.wal2json.NonStreamingWal2JsonMessageDecoder;
 import io.debezium.connector.postgresql.connection.wal2json.StreamingWal2JsonMessageDecoder;
@@ -337,6 +338,17 @@ public class PostgresConnectorConfig extends RelationalDatabaseConnectorConfig {
     }
 
     public enum LogicalDecoder implements EnumeratedValue {
+        PGOUTPUT("pgoutput") {
+            @Override
+            public MessageDecoder messageDecoder() {
+                return new PgOutputMessageDecoder();
+            }
+
+            @Override
+            public String getPostgresPluginName() {
+                return getValue();
+            }
+        },
         DECODERBUFS("decoderbufs") {
             @Override
             public MessageDecoder messageDecoder() {

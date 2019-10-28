@@ -13,3 +13,4 @@
 :strimzi-version: 0.13.0
 
 :prodname: Debezium
+:assemblies: ../assemblies

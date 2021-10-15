@@ -398,7 +398,8 @@ The following example shows a typical transaction boundary message:
 }
 ----
 
-The transaction events are written to the topic named `_<database.server.name>_.transaction`.
+Unless overridden via the link-prefix}:{link-oracle-connector}#oracle-property-transaction-topic-prefix[`transaction.topic.prefix`] option,
+transaction events are written to the topic named `_database.server.name_.transaction`.
 
 //Type: concept
 //ModuleID: debezium-oracle-connector-change-data-event-enrichment
@@ -2201,6 +2202,10 @@ For more information, see {link-prefix}:{link-avro-serialization}#avro-naming[Av
 |Set the property to `true` if you want {prodname} to generate events with transaction boundaries and enriches data events envelope with transaction metadata.
 
 See {link-prefix}:{link-oracle-connector}#oracle-transaction-metadata[Transaction Metadata] for additional details.
+
+|[[oracle-property-transaction-topic-prefix]]<<oracle-property-transaction-topic-prefix, `transaction.topic.prefix`>>
+|`database.server.name`
+|Controls the name of the topic to which the connector sends transaction metadata messages. The topic name has this pattern: _transaction.topic.prefix.transaction_. If not configured, it defaults to _database.server.name.transaction_.
 
 |[[oracle-property-log-mining-strategy]]<<oracle-property-log-mining-strategy, `+log.mining.strategy+`>>
 |`redo_log_catalog`

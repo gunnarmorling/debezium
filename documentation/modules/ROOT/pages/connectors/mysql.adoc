@@ -537,7 +537,8 @@ For every transaction `BEGIN` and `END`, {prodname} generates an event that cont
 }
 ----
 
-Transaction events are written to the topic named `_database.server.name_.transaction`.
+Unless overridden via the link-prefix}:{link-mysql-connector}#mysql-property-transaction-topic-prefix[`transaction.topic.prefix`] option,
+transaction events are written to the topic named `_database.server.name_.transaction`.
 
 .Change data event enrichment
 

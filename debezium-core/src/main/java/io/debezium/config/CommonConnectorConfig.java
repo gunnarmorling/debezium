@@ -528,7 +528,7 @@ public abstract class CommonConnectorConfig {
         this.binaryHandlingMode = BinaryHandlingMode.parse(config.getString(BINARY_HANDLING_MODE));
         this.signalingDataCollection = config.getString(SIGNAL_DATA_COLLECTION);
         this.skippedOperations = determineSkippedOperations(config);
-        this.transactionTopicPrefix = config.getString(TRANSACTION_TOPIC_PREFIX, "");
+        this.transactionTopicPrefix = config.getString(TRANSACTION_TOPIC_PREFIX, logicalName);
     }
 
     private static EnumSet<Envelope.Operation> determineSkippedOperations(Configuration config) {
@@ -623,6 +623,10 @@ public abstract class CommonConnectorConfig {
         return customConverterRegistry;
     }
 
+    /**
+     * Returns the prefix to be used for the name of the connector's TX metadata topic;
+     * defaults to the connector's logical name.
+     */
     public String getTransactionTopicPrefix() {
         return transactionTopicPrefix;
     }

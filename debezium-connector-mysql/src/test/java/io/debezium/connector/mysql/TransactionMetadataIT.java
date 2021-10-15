@@ -6,6 +6,7 @@
 
 package io.debezium.connector.mysql;
 
+import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -18,7 +19,6 @@ import java.util.Optional;
 
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
-import org.fest.assertions.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -122,7 +122,7 @@ public class TransactionMetadataIT extends AbstractConnectorTest {
 
         start(MySqlConnector.class, config);
 
-        Testing.Debug.enable();
+        // Testing.Debug.enable();
         assertConnectorIsRunning();
 
         waitForSnapshotToBeCompleted("mysql", DATABASE.getServerName());
@@ -134,10 +134,10 @@ public class TransactionMetadataIT extends AbstractConnectorTest {
             }
         }
 
-        SourceRecords records = consumeRecordsByTopic(1);
-        List<SourceRecord> txns = records.recordsForTopic("mytxntopic.transaction");
-        Assertions.assertThat(txns.size() > 0);
-
+        // TX BEGIN + 4 changes + TX END
+        SourceRecords records = consumeRecordsByTopic(1 + 4 + 1);
+        List<SourceRecord> txnEvents = records.recordsForTopic("mytxntopic.transaction");
+        assertThat(txnEvents).hasSize(2);
     }
 
     private String getTxId(List<SourceRecord> records) {

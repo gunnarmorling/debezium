@@ -399,7 +399,8 @@ For every transaction `BEGIN` and `END`, {prodname} generates an event that cont
 }
 ----
 
-The connector emits transaction events to the `_database.server.name_.transaction` topic.
+Unless overridden via the link-prefix}:{link-db2-connector}#db2-property-transaction-topic-prefix[`transaction.topic.prefix`] option,
+transaction events are written to the topic named `_database.server.name_.transaction`.
 
 .Data change event enrichment
 
@@ -2156,6 +2157,10 @@ In the resulting snapshot, the connector includes only the records for which `de
 |[[db2-property-provide-transaction-metadata]]<<db2-property-provide-transaction-metadata, `+provide.transaction.metadata+`>>
 |`false`
 |Determines whether the connector generates events with transaction boundaries and enriches change event envelopes with transaction metadata. Specify `true` if you want the connector to do this. See  {link-prefix}:{link-db2-connector}#db2-transaction-metadata[Transaction metadata] for details.
+
+|[[db2-property-transaction-topic-prefix]]<<db2-property-transaction-topic-prefix, `transaction.topic.prefix`>>
+|`database.server.name`
+|Controls the name of the topic to which the connector sends transaction metadata messages. The topic name has this pattern: _transaction.topic.prefix.transaction_. If not configured, it defaults to _database.server.name.transaction_.
 
 |[[db2-property-skipped-operations]]<<db2-property-skipped-operations, `+skipped.operations+`>>
 |No default

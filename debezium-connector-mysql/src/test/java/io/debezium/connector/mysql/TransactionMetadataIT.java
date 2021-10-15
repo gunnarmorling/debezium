@@ -6,7 +6,6 @@
 
 package io.debezium.connector.mysql;
 
-import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -113,12 +112,22 @@ public class TransactionMetadataIT extends AbstractConnectorTest {
     @FixFor("DBZ-4077")
     public void verifyTransactionTopicPrefix() throws InterruptedException, SQLException {
         config = DATABASE.defaultConfig()
-                .with(MySqlConnectorConfig.SNAPSHOT_MODE, MySqlConnectorConfig.SnapshotMode.SCHEMA_ONLY)
+                .with(MySqlConnectorConfig.SNAPSHOT_MODE, MySqlConnectorConfig.SnapshotMode.INITIAL)
                 .with(MySqlConnectorConfig.INCLUDE_SCHEMA_CHANGES, false)
                 .with(MySqlConnectorConfig.PROVIDE_TRANSACTION_METADATA, true)
                 .with(MySqlConnector.IMPLEMENTATION_PROP, "new")
                 .with(MySqlConnectorConfig.TRANSACTION_TOPIC_PREFIX, "mytxntopic")
+                .with(MySqlConnectorConfig.TABLE_INCLUDE_LIST, ".*customers")
                 .build();
+
+        try (MySqlTestConnection db = MySqlTestConnection.forTestDatabase(DATABASE.getDatabaseName());) {
+            try (JdbcConnection connection = db.connect()) {
+                connection.setAutoCommit(false);
+                connection.execute(CUSTOMER_INSERT_STMT_1);
+                connection.commit();
+            }
+        }
+
 
         start(MySqlConnector.class, config);
 
@@ -129,15 +138,18 @@ public class TransactionMetadataIT extends AbstractConnectorTest {
         try (MySqlTestConnection db = MySqlTestConnection.forTestDatabase(DATABASE.getDatabaseName());) {
             try (JdbcConnection connection = db.connect()) {
                 connection.setAutoCommit(false);
-                connection.execute(CUSTOMER_INSERT_STMT_1, PRODUCT_INSERT_STMT, ORDER_INSERT_STMT, CUSTOMER_INSERT_STMT_2);
+                connection.execute(CUSTOMER_INSERT_STMT_2);
                 connection.commit();
             }
         }
 
         // TX BEGIN + 4 changes + TX END
-        SourceRecords records = consumeRecordsByTopic(1 + 4 + 1);
-        List<SourceRecord> txnEvents = records.recordsForTopic("mytxntopic.transaction");
-        assertThat(txnEvents).hasSize(2);
+        SourceRecords records = consumeRecordsByTopic(1 + 1 + 1 + 1);
+        List<SourceRecord> txnEvents = records.recordsForTopic(DATABASE.getServerName() + "." + DATABASE.getDatabaseName() + ".customers");
+
+        for (SourceRecord sourceRecord : txnEvents) {
+			System.out.println(sourceRecord.value());
+		}
     }
 
     private String getTxId(List<SourceRecord> records) {
